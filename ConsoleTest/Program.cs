@@ -2,10 +2,11 @@
 
 namespace ConsoleTest
 {
-    using Model;
+    using Model.Categories;
     using Reposiroty;
     using Reposiroty.UnitOfWork;
     using Repository.DB;
+    using Repository.Mapping.SQL;
 
     class Program
     {
@@ -22,36 +23,47 @@ namespace ConsoleTest
             LogCategory(categoryTest3);
             Wait();
 
-            var uow = new UnitOfWork(new MongoDB("UOWTest"));
+            var connectionString = "Server=PC-Kaike;Database=DesignPatterns;Trusted_Connection=True;";
+            var database = new SQLDatabase(connectionString);
+            var uow = new UnitOfWork(database);
+            var mapper = new CategorySQLMapper(database);
+            uow.Database.Connection.Open();
 
-            var categoryRepository = new CategoryRepository(uow);
+            try
+            {
 
-            categoryRepository.Add(categoryTest1);
-            categoryRepository.Add(categoryTest2);
-            categoryRepository.Add(categoryTest3);
-            Console.WriteLine("Categories ADDED - UnitOfWork");
-            ShowCategoriesInDB(categoryRepository);
-            Wait();
+                var categoryRepository = new CategoryRepository(uow, mapper);
 
-            uow.Commit();
+                categoryRepository.Add(categoryTest1);
+                categoryRepository.Add(categoryTest2);
+                categoryRepository.Add(categoryTest3);
+                Console.WriteLine("Categories ADDED - UnitOfWork");
+                ShowCategoriesInDB(categoryRepository);
+                Wait();
 
-            ShowCategoriesInDB(categoryRepository);
-            Wait();
+                uow.Commit();
 
-            var categories = categoryRepository.FindAll();
+                ShowCategoriesInDB(categoryRepository);
+                Wait();
 
-            categoryTest3.Name = "ModifiedCategory";
-            categoryRepository.Update(categoryTest3);
-            categoryRepository.Remove(categoryTest2);
+                var categories = categoryRepository.FindAll();
 
-            Console.WriteLine("Categories MODIFIED - UnitOfWork");
-            ShowCategoriesInDB(categoryRepository);
-            Wait();
+                categoryTest3.Name = "ModifiedCategory";
+                categoryRepository.Update(categoryTest3);
+                categoryRepository.Remove(categoryTest2);
 
-            uow.Commit();
+                Console.WriteLine("Categories MODIFIED - UnitOfWork");
+                ShowCategoriesInDB(categoryRepository);
+                Wait();
 
-            ShowCategoriesInDB(categoryRepository);
-            Wait();
+                uow.Commit();
+
+                ShowCategoriesInDB(categoryRepository);
+                Wait();
+            }
+            catch (Exception ex)
+            { }
+            finally { uow.Database.Connection.Close(); }
         }
 
         private static Category CreateCategory(string name)

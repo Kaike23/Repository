@@ -40,18 +40,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Address.cs" />
-    <Compile Include="Base\EntityBase.cs" />
-    <Compile Include="Category.cs" />
-    <Compile Include="Customer.cs" />
-    <Compile Include="ICategoryRepository.cs" />
-    <Compile Include="ICustomerRepository.cs" />
-    <Compile Include="IProductRepository.cs" />
+    <Compile Include="Addresses\Address.cs" />
+    <Compile Include="Categories\Category.cs" />
+    <Compile Include="Customers\Customer.cs" />
+    <Compile Include="Categories\ICategoryRepository.cs" />
+    <Compile Include="Customers\ICustomerRepository.cs" />
+    <Compile Include="Products\IProductRepository.cs" />
     <Compile Include="Base\IReadOnlyRepository.cs" />
     <Compile Include="Base\IRepository.cs" />
-    <Compile Include="Order.cs" />
-    <Compile Include="Product.cs" />
+    <Compile Include="Orders\Order.cs" />
+    <Compile Include="Products\Product.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj">
+      <Project>{2662801c-ea07-4279-b663-9e8a43c7d534}</Project>
+      <Name>Infrastructure</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

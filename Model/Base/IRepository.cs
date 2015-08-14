@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Model.Base
+﻿namespace Model.Base
 {
-    public interface IRepository<T, TId> : IReadOnlyRepository<T, TId>
-        where T : EntityBase
+    using Infrastructure.Domain;
+
+    public interface IRepository<T> : IReadOnlyRepository<T>
+        where T : IEntity
     {
         void Add(T entity);
         void Update(T entity);

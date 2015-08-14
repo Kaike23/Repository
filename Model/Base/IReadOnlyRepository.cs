@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Model.Base
 {
-    public interface IReadOnlyRepository<T, TId> where T : EntityBase
+    using Infrastructure.Domain;
+
+    public interface IReadOnlyRepository<T> where T : IEntity
     {
-        T FindBy(TId id);
+        T FindBy(Guid id);
         IEnumerable<T> FindAll();
     }
 }
