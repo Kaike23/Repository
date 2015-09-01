@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,8 +11,8 @@ namespace Infrastructure.UnitOfWork
 
     public interface IUnitOfWorkRepository
     {
-        void PersistCreationOf(IEntity entity);
-        void PersistUpdateOf(IEntity entity);
-        void PersistDeletionOf(IEntity entity);
+        void PersistCreationOf(IEntity entity, IDbTransaction transaction = null);
+        void PersistUpdateOf(IEntity entity, IDbTransaction transaction = null);
+        void PersistDeletionOf(IEntity entity, IDbTransaction transaction = null);
     }
 }

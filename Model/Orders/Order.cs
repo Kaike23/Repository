@@ -3,9 +3,11 @@
 namespace Model.Orders
 {
     using Infrastructure.Domain;
+    using Infrastructure.Lock;
+    using Model.Base;
 
-    public class Order : IEntity
+    public class Order : BaseEntity
     {
-        public Guid Id { get; set; }
+        public Order(Guid id) : base(id) { }
     }
 }

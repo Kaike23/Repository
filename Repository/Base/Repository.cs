@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 
 namespace Repository.Base
 {
-    using System.Data.SqlClient;
     using Infrastructure.Domain;
     using Infrastructure.UnitOfWork;
     using Mapping.SQL.Base;
@@ -11,7 +12,7 @@ namespace Repository.Base
     using Model.Categories;
 
     public abstract class Repository<T> : IRepository<T>, IUnitOfWorkRepository
-        where T : IEntity
+        where T : BaseEntity
     {
         private IUnitOfWork _uow;
 
@@ -73,9 +74,9 @@ namespace Repository.Base
 
         #region IUnitOfWorkRepository
 
-        void IUnitOfWorkRepository.PersistCreationOf(IEntity entity) { DataMapper.Insert((T)entity); }
-        void IUnitOfWorkRepository.PersistUpdateOf(IEntity entity) { DataMapper.Update((T)entity); }
-        void IUnitOfWorkRepository.PersistDeletionOf(IEntity entity) { DataMapper.Delete((T)entity); }
+        void IUnitOfWorkRepository.PersistCreationOf(IEntity entity, IDbTransaction transaction) { DataMapper.Insert((T)entity, transaction); }
+        void IUnitOfWorkRepository.PersistUpdateOf(IEntity entity, IDbTransaction transaction) { DataMapper.Update((T)entity, transaction); }
+        void IUnitOfWorkRepository.PersistDeletionOf(IEntity entity, IDbTransaction transaction) { DataMapper.Delete((T)entity, transaction); }
 
         #endregion
     }

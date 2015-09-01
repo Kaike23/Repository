@@ -11,7 +11,7 @@ namespace Repository.Mapping.SQL
 
     public class CategorySQLMapper : BaseSQLMapper<Category>
     {
-        public CategorySQLMapper(IDatabase database) : base(database) { }
+        public CategorySQLMapper(SqlConnection dbConnection) : base(dbConnection) { }
 
         public static string Columns { get { return "*"; } }
         public static string TableName { get { return "Categories"; } }
@@ -21,7 +21,7 @@ namespace Repository.Mapping.SQL
         protected override Category DoLoad(Guid id, SqlDataReader reader)
         {
             var name = reader.GetString(1);
-            return new Category() { Id = id, Name = name };
+            return new Category(id) { Name = name };
         }
         public List<Category> FindByName(string name)
         {

@@ -1,74 +1,127 @@
 ﻿using System;
+using System.Data.SqlClient;
 
 namespace ConsoleTest
 {
     using Model.Categories;
-    using Reposiroty;
-    using Reposiroty.UnitOfWork;
+    using Model.Customers;
+    using Repository.UnitOfWork;
+    using Repository;
     using Repository.DB;
     using Repository.Mapping.SQL;
+    using Infrastructure.Lock;
 
     class Program
     {
         static void Main(string[] args)
         {
-            var categoryTest1 = CreateCategory("FirstCategory");
-            var categoryTest2 = CreateCategory("SecondCategory");
-            var categoryTest3 = CreateCategory("ThirdCategory");
+            var connectionString = @"Data Source=(LocalDB)\v11.0;AttachDbFilename=D:\GitHub\Repository\Repository\TestDB.mdf;Integrated Security=True";
+            var connection = new SqlConnection(connectionString);
+            var uow = new UnitOfWork(connection);
+            var mapper = new CustomerSQLMapper(connection);
 
-            Console.WriteLine("Press SPACE to contine");
-            Console.WriteLine("Categories CREATED:");
-            LogCategory(categoryTest1);
-            LogCategory(categoryTest2);
-            LogCategory(categoryTest3);
-            Wait();
-
-            var connectionString = "Server=PC-Kaike;Database=DesignPatterns;Trusted_Connection=True;";
-            var database = new SQLDatabase(connectionString);
-            var uow = new UnitOfWork(database);
-            var mapper = new CategorySQLMapper(database);
-            uow.Database.Connection.Open();
+            var customerTest1 = Customer.Create("Zaid", "Barrera");
 
             try
             {
+                connection.Open();
 
-                var categoryRepository = new CategoryRepository(uow, mapper);
+                var customerRepository = new CustomerRepository(uow, mapper);
 
-                categoryRepository.Add(categoryTest1);
-                categoryRepository.Add(categoryTest2);
-                categoryRepository.Add(categoryTest3);
-                Console.WriteLine("Categories ADDED - UnitOfWork");
-                ShowCategoriesInDB(categoryRepository);
+                customerRepository.Add(customerTest1);
+                Console.WriteLine("Customer ADDED - UnitOfWork");
+
                 Wait();
 
                 uow.Commit();
 
-                ShowCategoriesInDB(categoryRepository);
+                Console.WriteLine("Customer COMMITTED - Database");
                 Wait();
 
-                var categories = categoryRepository.FindAll();
+                var customers = customerRepository.FindAll();
 
-                categoryTest3.Name = "ModifiedCategory";
-                categoryRepository.Update(categoryTest3);
-                categoryRepository.Remove(categoryTest2);
-
-                Console.WriteLine("Categories MODIFIED - UnitOfWork");
-                ShowCategoriesInDB(categoryRepository);
+                customerTest1.FirstName = "Kaike";
+                customerRepository.Update(customerTest1);
+                Console.WriteLine("Customer MODIFIED - UnitOfWork");
+               
                 Wait();
 
                 uow.Commit();
+                Console.WriteLine("Customer COMMITTED - Database");
 
-                ShowCategoriesInDB(categoryRepository);
+                Wait();
+
+                customerRepository.Remove(customerTest1);
+                Console.WriteLine("Customer DELETED - UnitOfWork");
+
+                Wait();
+
+                uow.Commit();
+                Console.WriteLine("Customer COMMITTED - Database");
+                Console.WriteLine("DONE!");
                 Wait();
             }
             catch (Exception ex)
             { }
-            finally { uow.Database.Connection.Close(); }
+            finally { connection.Close(); }
+
+
+
+            //var categoryTest1 = CreateCategory("FirstCategory");
+            //var categoryTest2 = CreateCategory("SecondCategory");
+            //var categoryTest3 = CreateCategory("ThirdCategory");
+
+            //Console.WriteLine("Press SPACE to contine");
+            //Console.WriteLine("Categories CREATED:");
+            //LogCategory(categoryTest1);
+            //LogCategory(categoryTest2);
+            //LogCategory(categoryTest3);
+            //Wait();
+
+            //var connectionString = @"Data Source=(LocalDB)\v11.0;AttachDbFilename=D:\GitHub\Repository\Repository\TestDB.mdf;Integrated Security=True";
+            //var connection = new SqlConnection(connectionString);
+            //var uow = new UnitOfWork(connection);
+            //var mapper = new CategorySQLMapper(connection);
+
+            //try
+            //{
+            //    connection.Open();
+
+            //    var categoryRepository = new CategoryRepository(uow, mapper);
+
+            //    categoryRepository.Add(categoryTest1);
+            //    categoryRepository.Add(categoryTest2);
+            //    categoryRepository.Add(categoryTest3);
+            //    Console.WriteLine("Categories ADDED - UnitOfWork");
+            //    ShowCategoriesInDB(categoryRepository);
+            //    Wait();
+
+            //    uow.Commit();
+
+            //    ShowCategoriesInDB(categoryRepository);
+            //    Wait();
+
+            //    categoryTest3.Name = "ModifiedCategory";
+            //    categoryRepository.Update(categoryTest3);
+            //    categoryRepository.Remove(categoryTest2);
+
+            //    Console.WriteLine("Categories MODIFIED - UnitOfWork");
+            //    ShowCategoriesInDB(categoryRepository);
+            //    Wait();
+
+            //    uow.Commit();
+
+            //    ShowCategoriesInDB(categoryRepository);
+            //    Wait();
+            //}
+            //catch (Exception ex)
+            //{ }
+            //finally { connection.Close(); }
         }
 
         private static Category CreateCategory(string name)
         {
-            return new Category() { Id = Guid.NewGuid(), Name = name };
+            return new Category(Guid.NewGuid()) { Name = name };
         }
 
         private static void ShowCategoriesInDB(CategoryRepository repository)
@@ -96,6 +149,7 @@ namespace ConsoleTest
 
         private static void Wait()
         {
+            Console.WriteLine("Press SPACE to continue...");
             do
             {
                 while (!Console.KeyAvailable)

@@ -43,10 +43,12 @@
     <Compile Include="Database\IAsyncDatabase.cs" />
     <Compile Include="Database\IDatabase.cs" />
     <Compile Include="Domain\IEntity.cs" />
+    <Compile Include="Lock\VersionLock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnitOfWork\IUnitOfWork.cs" />
     <Compile Include="UnitOfWork\IUnitOfWorkRepository.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

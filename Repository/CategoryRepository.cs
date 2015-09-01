@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace Reposiroty
+namespace Repository
 {
     using Infrastructure.UnitOfWork;
     using Model.Categories;
@@ -14,13 +14,18 @@ namespace Reposiroty
 
         protected override string TableName { get { return "Categories"; } }
 
+        //protected override Category MapDataToEntity(object document)
+        //{
+        //    var category = new Category();
+        //    var mongoDocument = document as BsonDocument;
+        //    category.Id = mongoDocument.ElementAt(0).Value.AsGuid;
+        //    category.Name = mongoDocument.ElementAt(1).Value.AsString;
+        //    return category;
+        //}
+
         protected override Category MapDataToEntity(object document)
         {
-            var category = new Category();
-            var mongoDocument = document as BsonDocument;
-            category.Id = mongoDocument.ElementAt(0).Value.AsGuid;
-            category.Name = mongoDocument.ElementAt(1).Value.AsString;
-            return category;
+            throw new System.NotImplementedException();
         }
     }
 }

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 
-namespace Reposiroty.UnitOfWork
+namespace Repository.UnitOfWork
 {
     using Infrastructure.Database;
     using Infrastructure.Domain;
@@ -10,18 +11,16 @@ namespace Reposiroty.UnitOfWork
 
     public class UnitOfWork : IUnitOfWork
     {
-        private IDatabase _database;
+        private IDbConnection _dbConnection;
         private Dictionary<IUnitOfWorkRepository, List<IEntity>> newEntities = new Dictionary<IUnitOfWorkRepository, List<IEntity>>();
         private Dictionary<IUnitOfWorkRepository, List<IEntity>> dirtyEntities = new Dictionary<IUnitOfWorkRepository, List<IEntity>>();
         private Dictionary<IUnitOfWorkRepository, List<IEntity>> removedEntities = new Dictionary<IUnitOfWorkRepository, List<IEntity>>();
 
-        public UnitOfWork(IDatabase database)
+        public UnitOfWork(IDbConnection dbConnection)
         {
             //TODO: Review
-            _database = database;
+            _dbConnection = dbConnection;
         }
-
-        public IDatabase Database {  get { return _database; } }
 
         public void RegisterNew(IEntity entity, IUnitOfWorkRepository repository)
         {
@@ -69,21 +68,21 @@ namespace Reposiroty.UnitOfWork
 
         public void Commit()
         {
-            using (var trans = _database.BeginTransation())
+            using (var trans = _dbConnection.BeginTransaction(IsolationLevel.ReadUncommitted))
             {
                 try
                 {
                     foreach (var record in newEntities)
                         foreach (var entity in record.Value)
-                            record.Key.PersistCreationOf(entity);
+                            record.Key.PersistCreationOf(entity, trans);
 
                     foreach (var record in dirtyEntities)
                         foreach (var entity in record.Value)
-                            record.Key.PersistUpdateOf(entity);
+                            record.Key.PersistUpdateOf(entity, trans);
 
                     foreach (var record in removedEntities)
                         foreach (var entity in record.Value)
-                            record.Key.PersistDeletionOf(entity);
+                            record.Key.PersistDeletionOf(entity, trans);
 
                     trans.Commit();
                 }
@@ -93,6 +92,9 @@ namespace Reposiroty.UnitOfWork
                 }
                 finally
                 {
+                    foreach (var record in dirtyEntities)
+                        foreach (var entity in record.Value)
+                            entity.VersionLock.Release();
                     newEntities.Clear();
                     dirtyEntities.Clear();
                     removedEntities.Clear();

@@ -7,17 +7,18 @@ namespace Repository.Mapping.SQL.Base
 {
     using Infrastructure.Database;
     using Infrastructure.Domain;
+    using Model.Base;
 
     public abstract class BaseSQLMapper<T> : IDataMapper<T>
-        where T : IEntity
+        where T : BaseEntity
     {
-        public BaseSQLMapper(IDatabase database)
+        protected SqlConnection _dbConnection;
+
+        public BaseSQLMapper(SqlConnection dbConnection)
         {
             //TODO: Review
-            Database = database;
+            _dbConnection = dbConnection;
         }
-
-        public IDatabase Database { get; set; }
 
         protected Dictionary<Guid, T> loadedMap = new Dictionary<Guid, T>();
         protected abstract string FindStatement { get; }
@@ -34,10 +35,14 @@ namespace Repository.Mapping.SQL.Base
 
             try
             {
-                var sqlCommand = new SqlCommand(FindStatement, Database.Connection);
-                sqlCommand.Parameters.Add("@Id", SqlDbType.UniqueIdentifier).Value = id;
-                var reader = sqlCommand.ExecuteReader();
-                return Load(reader);
+                using (var sqlCommand = new SqlCommand(FindStatement, _dbConnection))
+                {
+                    sqlCommand.Parameters.Add("@Id", SqlDbType.UniqueIdentifier).Value = id;
+                    var reader = sqlCommand.ExecuteReader();
+                    result = Load(reader);
+                    reader.Close();
+                }
+                return result;
             }
             catch (SqlException e)
             {
@@ -48,24 +53,29 @@ namespace Repository.Mapping.SQL.Base
         {
             try
             {
-                var sqlCommand = new SqlCommand(source.Sql);
+                var sqlCommand = new SqlCommand(source.Sql, _dbConnection);
                 sqlCommand.Parameters.AddRange(source.Parameters.ToArray());
-                var reader = Database.FindAll(sqlCommand);
-                return LoadAll(reader);
+                var reader = sqlCommand.ExecuteReader();
+                var result = LoadAll(reader);
+                reader.Close();
+                return result;
             }
             catch (SqlException e)
             {
                 throw new ApplicationException(e.Message, e);
             }
         }
-        public Guid Insert(T entity)
+        public Guid Insert(T entity, IDbTransaction transaction = null)
         {
             try
             {
-                var insertCommand = new SqlCommand(InsertStatement);
+                var insertCommand = new SqlCommand(InsertStatement, _dbConnection, (SqlTransaction)transaction);
                 insertCommand.Parameters.AddWithValue("@Id", entity.Id);
+
+                entity.GetVersion(_dbConnection, (SqlTransaction)transaction).Insert(_dbConnection, (SqlTransaction)transaction);
+
                 DoInsert(entity, insertCommand);
-                var affectedRows = Database.Execute(insertCommand);
+                var affectedRows = insertCommand.ExecuteNonQuery();
                 loadedMap.Add(entity.Id, entity);
                 return entity.Id;
             }
@@ -74,27 +84,33 @@ namespace Repository.Mapping.SQL.Base
                 throw new ApplicationException(e.Message, e);
             }
         }
-        public int Update(T entity)
+        public int Update(T entity, IDbTransaction transaction = null)
         {
             try
             {
-                var updateCommand = new SqlCommand(UpdateStatement);
+                var updateCommand = new SqlCommand(UpdateStatement, _dbConnection, (SqlTransaction)transaction);
                 updateCommand.Parameters.AddWithValue("@Id", entity.Id);
                 DoUpdate(entity, updateCommand);
-                return Database.Execute(updateCommand);
+
+                entity.GetVersion(_dbConnection, (SqlTransaction)transaction).Increment(_dbConnection, (SqlTransaction)transaction);
+
+                return updateCommand.ExecuteNonQuery();
             }
             catch (SqlException e)
             {
                 throw new ApplicationException(e.Message, e);
             }
         }
-        public int Delete(T entity)
+        public virtual void Delete(T entity, IDbTransaction transaction = null)
         {
             try
             {
-                var deleteCommand = new SqlCommand(DeleteStatement);
+                var deleteCommand = new SqlCommand(DeleteStatement, _dbConnection, (SqlTransaction)transaction);
                 deleteCommand.Parameters.AddWithValue("@Id", entity.Id);
-                return Database.Execute(deleteCommand);
+
+                entity.GetVersion(_dbConnection, (SqlTransaction)transaction).Increment(_dbConnection, (SqlTransaction)transaction);
+
+                deleteCommand.ExecuteNonQuery();
             }
             catch (SqlException e)
             {
@@ -110,16 +126,17 @@ namespace Repository.Mapping.SQL.Base
             var id = reader.GetGuid(0);
             if (loadedMap.ContainsKey(id)) return loadedMap[id];
             var result = DoLoad(id, reader);
-            reader.Close();
             loadedMap.Add(id, result);
             return result;
         }
         protected List<T> LoadAll(SqlDataReader reader)
         {
             var result = new List<T>();
-            while (reader.Read())
-                result.Add(Load(reader));
-            reader.Close();
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                    result.Add(Load(reader));
+            }
             return result;
         }
 
